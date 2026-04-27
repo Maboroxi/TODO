@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { ElMessageBox } from 'element-plus'
 import { useTodos } from './composables/useTodos'
 import TodoInput from './components/TodoInput.vue'
 import TodoList from './components/TodoList.vue'
 import TodoFilter from './components/TodoFilter.vue'
+import {ref, onMounted,onUnmounted } from 'vue'
 
 const {
   filteredTodos,
@@ -10,11 +12,41 @@ const {
   stats,
   toggleTodo,
   deleteTodo,
-  updateTodo,
+  addChildTodo,
   clearCompleted,
   setFilter,
   reorderTodos
 } = useTodos()
+
+
+const handleAddChild = async (parentId: number) => {
+  try {
+    const { value } = await ElMessageBox.prompt('输入子事项内容', '添加子事项', {
+      confirmButtonText: '添加',
+      cancelButtonText: '取消',
+      inputPlaceholder: '子事项...'
+    })
+    if (value?.trim()) {
+      addChildTodo(parentId, value)
+    }
+  } catch {
+    // 用户取消
+  }
+}
+const getCurrentTime = ()=>{
+  return new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-')
+}
+
+var currentTime = ref(getCurrentTime())
+
+let timer: ReturnType<typeof setInterval>
+
+onMounted(() => {
+  timer = setInterval(() => { currentTime.value = getCurrentTime() }, 1000)
+})
+onUnmounted(() => clearInterval(timer))
+
+
 </script>
 
 <template>
@@ -25,7 +57,7 @@ const {
           待办事项
         </h1>
         <p class="text-gray-500 dark:text-gray-400">
-          高效管理你的每一天
+          今天是{{ currentTime }},高效管理你的每一天
         </p>
       </header>
 
@@ -42,7 +74,7 @@ const {
         :todos="filteredTodos"
         @toggle="toggleTodo"
         @delete="deleteTodo"
-        @update="updateTodo"
+        @add-child="handleAddChild"
         @reorder="reorderTodos"
       />
     </div>
